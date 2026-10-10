@@ -4,25 +4,27 @@
 
 ## Team
 
-| Participant | GitHub |
-|---|---|
-|  |  |
+<!-- GitHub usernames of the Participants. Other personal data are not required: the repository becomes public after the Freeze (Rules, section 15). -->
 
-## Modules
+| GitHub |
+|---|
+|  |
 
-<!-- Implemented Modules: from the Mine Map or your own. -->
+## Mine
 
-| Module | Location in the code |
-|---|---|
-|  |  |
+<!-- Which part of a mining enterprise the Submission represents (open pit, underground mine, processing plant…), which objects are twins in OpenEgiz, how they are related, and where they are defined in the code. -->
+
+## Modules and What-if Scenarios
+
+<!-- Modules: functions on top of the twin, from the Mine Map or your own. What-if Scenarios: changes of an operating condition that can be run on the Stand without changing the code (close a road, stop equipment…). Only what works on the Stand is taken into account. -->
+
+| Module or What-if Scenario | What it does | How to see it on the Stand | How to undo it (scenarios) |
+|---|---|---|---|
+|  |  |  |  |
 
 ## What works and what does not
 
 <!-- What has been verified, what is unfinished, which bugs are known. -->
-
-## Module justification
-
-<!-- For each Module: problem → metric → result, measured on the Stand against the same mine without this Module (for example, output in tonnes per shift without dispatch and with it), and how to reproduce the measurement. Only effects reproducible on the Stand are taken into account. -->
 
 ## Data and Assumptions
 
@@ -45,4 +47,4 @@ Confidential data of organizations and personal data are prohibited.
 
 ---
 
-Platform: OpenEgiz v1.0.2.
+Platform: OpenEgiz v1.0.4.
