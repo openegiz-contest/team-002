@@ -1,43 +1,121 @@
-# <Team name>: a digital mine on OpenEgiz
+# QazMine Flow — цифровой двойник медного карьера на OpenEgiz
 
-> Team Repository of the contest “Digital Mine on OpenEgiz”. **Replace the contents of this file with the instructions for your Submission.** The AI Jury runs the Submission strictly by these instructions, from scratch, in the Judge Environment. Accepted languages: English, Kazakh, Russian.
+**Этот файл предназначен для КОРНЯ конкурсного репозитория** `openegiz-contest/team-NNN` с уже установленным полным шаблоном OpenEgiz. Не используйте архив проекта вместо OpenEgiz: для конкурса обязательно сохранить базовую платформу.
 
-> **Start with the Concept**, the first section of [SUBMISSION.md](SUBMISSION.md): the Team writes it before any code. What AI agents build from this Template without a Concept is the Default Solution, published on the [contest site](https://openegiz-contest.github.io/) as the low bar: a Submission that does not go beyond it gets low levels in the Rubric. AI agents read [AGENTS.md](AGENTS.md).
+> Производственный замысел: сменный диспетчер выбирает, куда отправлять самосвалы, чтобы управлять пробегом, ожиданием техники и качеством руды у дробилки. Модель синтетическая, не представляет действующий объект.
 
-## Running
+## Быстрый запуск с нуля — Ubuntu 24.04 / Docker Compose
 
-Requirements (Docker, `make`, Windows/WSL2 setup) are in [OPENEGIZ.md](OPENEGIZ.md) / [OPENEGIZ.ru.md](OPENEGIZ.ru.md).
+В **корне конкурсного репозитория** должны одновременно присутствовать `deploy/compose/docker-compose.yml` (из шаблона OpenEgiz) и папка `qazmine/` (созданная командой).
+
+### Предварительные условия
+
+- Docker Engine + Docker Compose v2.20+ (в среде судьи уже предусмотрен Docker).
+- Git, Python 3 и `make` (при необходимости установить командой ниже).
+- Не менее 6 ГБ оперативной памяти для Docker.
+- Сеть на первом запуске для скачивания базовых Docker-образов и сборки штатного расширенного API OpenEgiz.
+- Не нужны OpenAI API, платные сервисы, личные аккаунты и готовые секреты.
+
+### Команды запуска
 
 ```bash
-sudo apt install -y make   # if make is missing (clean Ubuntu)
-make up            # the OpenEgiz platform
-make example-mine  # the Example Mine: twins, simulator, dashboard
+sudo apt-get update
+sudo apt-get install -y git make python3
+
+# ВАЖНО: команды выполняются из корня конкурсного репозитория.
+# Генерирует случайные пароли, запускает Ditto, MQTT, Telegraf, InfluxDB и Grafana.
+make up
+
+# Создает СОБСТВЕННЫЕ 14 twin-объектов, запускает симулятор, веб-интерфейс
+# и настраивает собственный Grafana dashboard.
+docker compose -f deploy/compose/docker-compose.yml -f qazmine/overlay.yml \
+  up -d --build --wait --wait-timeout 900
+
+# Проверка всей платформы: MQTT -> Ditto -> InfluxDB -> Grafana.
+make smoke
+
+# Дополнительная проверка: команда -> MQTT -> Ditto -> интерфейс.
+python3 qazmine/scripts/verify.py
 ```
 
-Replace these commands with the commands of your Submission. The Submission must start by following these instructions without manual intervention (Rules, clause 6.4); downloading datasets and models and building are also listed here.
+Открыть:
+- **Интерактивная цифровая карта:** http://localhost:8765
+- **Grafana:** http://localhost:3000 → Dashboards → OpenEgiz Examples → `QazMine Flow - live copper mine`
+- **Eclipse Ditto:** http://localhost:8080/api/2/things/org.qazmine.flow:mine (Basic `ditto` + пароль в `deploy/compose/.env`)
 
-## What to open
+Старт и проверка `make up` могут скачивать и собирать зависимости на первом запуске. Дождитесь завершения команд.
 
-- Grafana: the address and login are printed by `make up`.
-- <where to see the mine visualization, which dashboards>
+### Если интерфейс не открывается
 
-## Repository contents
+```bash
+docker compose -f deploy/compose/docker-compose.yml -f qazmine/overlay.yml ps -a
+docker compose -f deploy/compose/docker-compose.yml -f qazmine/overlay.yml logs --tail=100 qazmine-setup qazmine-app
+```
 
-| Path | Contents |
-|---|---|
-| `team/` | Directory for the Team's code. Using it is optional: any part may be changed, including the platform core |
-| `SUBMISSION.md` | Description of the Submission: **required** |
-| `presentation.pdf` | Presentation: **required**, in the repository root |
-| `AGENTS.md`, `CLAUDE.md` | Instructions for your AI agents (Codex, Claude Code and others read them automatically) |
-| `examples/mine/` | The Example Mine: shows how a digital mine is built on OpenEgiz. It is not a basis for the Submission |
-| `OPENEGIZ.md`, `OPENEGIZ.ru.md` | Documentation of the OpenEgiz platform v1.0.4 |
+Открытые порты привязаны к `127.0.0.1` по умолчанию, удалённому браузеру может понадобиться проброс порта. Ничего в файле `.env` не коммитить.
 
-The Submission is the `main` branch at the moment of the Freeze; other branches are not evaluated.
+## Демонстрация для жюри (6 минут)
 
-## License
+1. Откройте http://localhost:8765 — значения появляются из **Eclipse Ditto REST API**; переключите время и посмотрите движение машин на карте.
+2. Откройте страницу Grafana: графики истории приходят по конвейеру **MQTT → Ditto → Telegraf → InfluxDB**.
+3. **Сценарий 1** — включите `Перекрытие главной дороги`. На карте дорога становится красной. Машины, ещё не въехавшие на неё, перестраивают маршрут через объезд J→D→C. Машины, уже находящиеся на закрытой секции, останавливаются на месте до её открытия; телепортации нет. Выключите сценарий.
+4. **Сценарий 2** — включите `Авария экскаватора EX-B`. Его twin получает состояние `maintenance`, работа замораживается и диспетчер выбирает доступный участок. Выключите сценарий.
+5. **Сценарий 3** — включите `Дробилка −50% мощности`. Отображается изменение паспортной мощности и пропускной способности модели; при накоплении машин образуется очередь. Выключите сценарий.
+6. Поменяйте режим `Базовый` / `Адаптивный`, запустите сравнение на одинаковых условиях. Кнопка `Сбросить симуляцию` возвращает исходную конфигурацию.
 
-The Submission is distributed under the MIT license, see [LICENSE](LICENSE). Copyright belongs to the Team: add the line `Copyright (c) 2026 <Team members>` to `LICENSE`.
+Все переключатели вызывают сервис управления и публикуют состояние цифровых двойников в MQTT. Значения интерфейса читаются из Ditto, не из переменных веб-сервера.
 
----
+## Архитектура
 
-Platform: [aleka07/openegiz](https://github.com/aleka07/openegiz). If the platform was useful to you, support the project with a star on GitHub.
+```text
+                 digital model.py / scheduling / discrete-time physics
+                                  │
+                  Ditto Protocol "modify" commands
+                                  ▼
+                           MQTT telemetry/+
+                                  ▼
+                           Eclipse Ditto ──► FastAPI Ditto proxy ──► SVG Map UI
+                                  │
+                     MQTT/OpenTwins events
+                                  ▼
+                           Telegraf ──► InfluxDB ──► Grafana dashboard
+
+  Browser scenario button ──► FastAPI controller ──► Mine state ──► MQTT ──► Ditto
+```
+
+## Наши цифровые двойники
+
+Пространственная структура: Карьер; два рудных участка A и B; два экскаватора; три самосвала HT-01..03; дробилка CR-01; пять дорожных сегментов. Всего **14 уникальных Things** в namespace `org.qazmine.flow`. Иерархия выражена `_parents`; каждая Thing содержит признаки `features` и атрибуты.
+
+Данные передаются в виде команд Ditto Protocol с топиками `telemetry/<twin-name>`. Снимок состояния обновляется каждые 1 сек реального времени при масштабе 1 сек = 20 сек симуляции.
+
+### Модель и ограничения
+
+1. Рудный участок A: **0,45% Cu**, запасы **12 000 т**; участок B: **1,10% Cu**, запасы **10 000 т**.
+2. Самосвал: грузоподъёмность **80 т**, скорости **30 км/ч** порожний, **21 км/ч** гружёный.
+3. Экскаватор: 600 т/ч эквивалентной погрузочной способности. Дробилка: 450 т/ч (225 т/ч при аварийном ограничении).
+4. Руда передаётся целыми загрузками; состав усредняется по взвешенной массе. Массобаланс контролируется тестами.
+5. Самосвалы распределяются по **дорожному графу**, а не плавно телепортируются между точками. Непроходимые дороги исключаются из алгоритма Дейкстры.
+6. Базовый алгоритм предпочитает нижний участок A. Адаптивный минимизирует приблизительную оценку отклонения от 0,78% Cu, очереди и длины маршрута. Это эвристика, а не обучение нейросети или глобально оптимальный производственный план.
+
+**Важно:** все числовые характеристики и география являются синтетическими допущениями команды, а не реальными показателями месторождения. Они предназначены для воспроизводимого примера, а не для промышленного применения без калибровки. Подробности: `SUBMISSION.md`.
+
+## Программные тесты
+
+```bash
+python3 -m unittest discover -s tests -v
+python3 qazmine/scripts/verify.py  # требует запущенный Docker OpenEgiz
+```
+
+Проверяются: построение объезда, массовый баланс, взвешенное содержание меди, обратимость трёх сценариев, определение Things, детерминизм сравнения стратегий.
+
+## Ограничения
+
+- Нет интеграции с реальными GPS или PLC, характеристики условные.
+- Нет взрывных работ, вентиляции, флотации или коммерческих прогнозов.
+- Текущий тест диспетчера демонстрирует компромисс между качеством и объёмом, а не гарантирует рост всех метрик одновременно.
+- Работа полного Docker-конвейера должна быть проверена в Ubuntu судьи; локальные Python-тесты не заменяют эту проверку.
+
+## Лицензирование
+
+Новый код QazMine Flow доступен под MIT, за исключением компонентов OpenEgiz и их зависимостей, распространяемых по собственным лицензиям. Данные проекта синтетические. Никакие внешние датасеты не скачиваются при старте. Сторонние числовые значения не объявляются измеренными. Базовая платформа: https://github.com/aleka07/openegiz .

@@ -1,64 +1,67 @@
-# SUBMISSION
+# Замысел
 
-<!-- Fill in every section. The AI Jury studies this file together with the code, the Build Report, the presentation and the Stand's interface. Accepted languages: English, Kazakh, Russian. These hint comments may be deleted. -->
+**QazMine Flow** — цифровой двойник *вымышленного* малого открытого медного рудника, созданный на OpenEgiz. Он предназначен для сменного диспетчера: помогает выбирать, куда направлять самосвалы, чтобы не перегружать дробилку, снижать непродуктивное ожидание и одновременно удерживать качество медной руды около заданного уровня. Это актуальная технологическая задача, потому что решения по погрузке и перевозке напрямую влияют на загрузку переработки и усреднение содержания полезного компонента. Мы сознательно выбрали не весь комбинат, а связанный цикл «два участка → погрузка → дороги → дробилка»: на стенде можно наблюдать каждое производственное следствие и проверить баланс масс.
 
-## Concept
+Представлен учебный объект, вдохновлённый *типовыми принципами* открытых медных карьеров, без утверждения о соответствии конкретному месторождению Казахстана. Все количественные значения условные, обоснованы как явные инженерные параметры минимального учебного карьера, подлежащие замене паспортными данными при переносе на реальное производство. Детальное сравнение и ограничения описаны ниже.
 
-<!-- Written by the Team before the code: your own choice, a few sentences per answer. Everything else in the Submission follows from it. -->
+## Команда
 
-**Enterprise:** <!-- Which mining enterprise, or which part of it, the twin represents. -->
+- **Название команды:** [УКАЖИТЕ НАЗВАНИЕ КОМАНДЫ]
+- **GitHub участников:** [УКАЖИТЕ ТОЧНЫЕ GITHUB USERNAMES]
 
-**Users:** <!-- Who uses the twin. -->
+## Модель рудника и архитектура
 
-**Decision:** <!-- Which decision the twin helps them make. -->
+В Ditto создано 14 Things `org.qazmine.flow:*`: карьер `mine`, участки `face-a`, `face-b`, экскаваторы `exc-a`, `exc-b`, самосвалы `haul-01`..`haul-03`, дорога `road-a`, `road-b`, `road-main`, `road-detour-1`, `road-detour-2`, дробилка `crusher`. Связи и группировка через `_parents` и атрибуты дорог `start`/`end`; состояния через `features`. Реализация: `qazmine/setup_twins.py`.
 
-**Why this choice:** <!-- Why this enterprise, these users and this decision. -->
+Сервис `qazmine/server.py` каждую секунду вызывает детерминированную модель `qazmine/model.py`, формирует Ditto Protocol `modify` и публикует в MQTT `telemetry/<id>`. Eclipse Ditto хранит фактическое состояние Things, штатный Telegraf передаёт историю в InfluxDB, штатная Grafana отображает динамику. API `/api/state` получает значения через **Ditto REST GET** для каждого Thing; интерфейс не рисует заранее записанные движения. История: `QazMine Flow - live copper mine` в Grafana.
 
-**Real or fictional:** <!-- A real object: name it and give the sources of its numbers. A fictional one: which real objects it resembles and where its numbers come from. A real object with sourced numbers scores higher. -->
+Карта: `http://localhost:8765`, живые SVG-позиции самосвалов, пять физических дорожных сегментов, карьерная схема, участки, экскаваторы и дробилка. Статистика берётся из Things в Ditto.
 
-## Team
+## Реализованные модули
 
-<!-- GitHub usernames of the Participants. Other personal data are not required: the repository becomes public after the Freeze (Rules, section 15). -->
+### 1. Транспорт и диспетчеризация
 
-| GitHub |
-|---|
-|  |
+Симуляция цикла выбора участка → порожний рейс → ожидание → погрузка → гружёный рейс → очередь → дробление; кратчайшие маршруты по графу дорог, поддержка недоступных участков. Как увидеть: анимированные самосвалы и изменяющиеся `state`, `road`, `payload`, `speed` в Things `haul-*`.
 
-## Mine
+### 2. Геология и качество руды
 
-<!-- Which part of a mining enterprise the Submission represents (open pit, underground mine, processing plant…), which objects are twins in OpenEgiz, how they are related, and where they are defined in the code. -->
+Два добычных участка с разными содержаниями Cu, запасы уменьшаются при каждой погрузке. Питание дробилки усредняется по массе: `sum(m_i * grade_i)/sum(m_i)`. Как увидеть: `face-*`, `mine.feed_grade` и переключение между базовым и адаптивным режимами. Цель 0,78% Cu.
 
-## Modules and What-if Scenarios
+### 3. Переработка (первичное дробление)
 
-<!-- Modules: functions on top of the twin, from the Mine Map or your own. What-if Scenarios: changes of an operating condition that can be run on the Stand without changing the code (close a road, stop equipment…). Only what works on the Stand is taken into account. -->
+Одна дробилка с конечной скоростью обработки; очередь появляется при накоплении прибывающих самосвалов, мощность меняется при сценарии. Как увидеть: `crusher.rated_capacity`, `crusher.queue`, `crusher.throughput` и `tonnes_total` в Grafana.
 
-| Module or What-if Scenario | What it does | How to see it on the Stand | How to undo it (scenarios) |
-|---|---|---|---|
-|  |  |  |  |
+## Сценарии «что если»
 
-## What works and what does not
+1. **Дорога закрыта**: в интерфейсе включить `Перекрытие главной дороги`. `road-main.state` в Ditto становится `closed`, будущие назначения через граф пересчитываются для `J→D→C`, техника на закрытом участке останавливается до его открытия. Отмена: выключить переключатель.
+2. **Авария EX-B**: включить `Авария экскаватора EX-B`. `exc-b.state` становится `maintenance`; существующая погрузка замораживается, новые назначения выбирают доступный участок. Отмена: выключить переключатель.
+3. **Половинная мощность дробилки**: включить `Дробилка −50% мощности`. `crusher.rated_capacity` снижается с 450 до 225 т/ч; увеличивается время разгрузки, из-за чего могут расти очереди и падать тоннаж. Отмена: выключить переключатель.
 
-<!-- What has been verified, what is unfinished, which bugs are known. -->
+Кнопка `Сбросить симуляцию` сбрасывает время и сценарии. Каждое состояние изменяется цифровым двойником и становится видимым после доставки MQTT→Ditto.
 
-## Data and Assumptions
+## Замысел и количественные результаты
 
-<!--
-- Synthetic and real data.
-- Sources of parameters: equipment data sheets, reference literature, industrial safety regulations, datasets.
-- Datasets: source, license, how they are provided (in the repository or downloaded per the README).
-Confidential data of organizations and personal data are prohibited.
--->
+Демонстрационное сравнение (одинаковые исходные условия, 4 симулируемых часа, шаг 20 с, без внешних сбоев):
 
-## Mine visualization
+| Показатель | Базовый | Адаптивный |
+|---|---:|---:|
+| Доставлено, т | 1600 | 1520 |
+| Содержание Cu, % | 0,450 | 0,792 |
+| Абсолютное отклонение от 0,78% Cu, п.п. | 0,330 | 0,012 |
+| Среднее накопленное ожидание / машина, мин | 15,4 | 16,4 |
 
-<!-- Address on the Stand, dashboard or scene; what it shows. -->
+Результаты рассчитаны `benchmark()` и воспроизводятся через `GET /api/benchmark`. **Преимущество по удержанию качества сопровождается ухудшением тоннажа и ожидания** в выбранном эксперименте. Не заявляем несуществующую экономию или оптимальность. В рамках MVP диспетчер выбирает компромисс между критериями.
 
-## Limitations
+## Данные и допущения
 
-## Presentation
+Данные полностью **синтетические**, наборов персональных, закрытых производственных или скачиваемых внешних данных нет. Предположения: grade A=0,45% Cu, grade B=1,10% Cu, целевой grade=0,78% Cu, запасы 12 000/10 000 т, грузоподъёмность=80 т, скорость порожнего/гружёного=30/21 км/ч, экскаватор 600 т/ч, дробилка 450 т/ч. Пять дорожных сегментов длиной 1,2–1,75 км. Границы модели показаны в `qazmine/model.py`. Это выбранные *иллюстративные параметры*, а не цитируемые паспорта реальных машин. На реальном объекте обязательна калибровка по паспортам и производственным журналам.
 
-`presentation.pdf` in the repository root. Video (optional): <link>
+Общие принципы цифровых двойников и Ditto: https://github.com/aleka07/openegiz и https://eclipse.dev/ditto/ . Лицензии: собственные файлы MIT; базовый OpenEgiz и иные компоненты сохраняют собственные лицензии.
 
----
+## Визуализация и как проверить на стенде
 
-Platform: OpenEgiz v1.0.4.
+Следовать **корневому** `README.md` от начала до конца. После завершения команд открыть `http://localhost:8765` и Grafana `http://localhost:3000` → OpenEgiz Examples → QazMine Flow - live copper mine. Подтвердить время, координаты и признаки Things в `GET /api/2/things/org.qazmine.flow:mine` либо `GET /api/state` (он читает Ditto). Для проверки сценариев использовать элементы управления справа; после просмотра каждого вернуть переключатель в исходное положение.
+
+## Ограничения и подтверждение
+
+Результаты тестов Python подтверждены командой `python3 -m unittest discover -s tests -v`. **Развёртывание полного Docker/OpenEgiz и загрузка Grafana должны быть проверены командой в реальной судейской Ubuntu** с запуском `make smoke` и `python3 qazmine/scripts/verify.py`; до такого запуска нельзя считать полную интеграцию доказанной. Не реализованы реальные GPS и PLC, флотация, специализированные модели геомеханики и БВР.
