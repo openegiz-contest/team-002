@@ -1,0 +1,40 @@
+<!DOCTYPE html><html lang="ru"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>QazMine Flow — OpenEgiz Digital Twin</title><link rel="stylesheet" href="/style.css"/></head>
+<body><header><div class="brand"><span class="mark">◈</span><div><b>QazMine <em>FLOW</em></b><small>DIGITAL COPPER MINE · OpenEgiz</small></div></div><div class="head-right"><span id="conn" class="pill">Connecting to Eclipse Ditto...</span><span class="clock">MODEL TIME <b id="simtime">00:00</b></span></div></header>
+<main>
+ <div class="hero"><div><div class="eyebrow">ПРОИЗВОДСТВЕННЫЙ ДВОЙНИК · КАЗАХСТАН</div><h1>Умная диспетчеризация <span>карьера</span></h1><p>От добычного участка до дробилки. Реальная телеметрия из Ditto, маршруты техники и поведение при сбоях.</p></div><div class="synthetic">● СИНТЕТИЧЕСКАЯ МОДЕЛЬ<br><small>Учебный прототип, не реальная шахта</small></div></div>
+ <section class="kpis"><div class="kpi"><label>РУДА ДОСТАВЛЕНА</label><strong id="tonnes">—</strong><small>тонн, на дробилку</small></div><div class="kpi"><label>СОДЕРЖАНИЕ МЕДИ</label><strong id="grade">—</strong><small>Cu · цель 0,78%</small></div><div class="kpi"><label>ПРОИЗВОДИТЕЛЬНОСТЬ</label><strong id="throughput">—</strong><small>т/ч · последнее окно</small></div><div class="kpi"><label>ОЖИДАНИЕ ТЕХНИКИ</label><strong id="waiting">—</strong><small>мин/самосвал</small></div></section>
+ <div class="columns"><section class="panel map-panel"><div class="panel-heading"><div><div class="eyebrow">01 / ПРОСТРАНСТВЕННАЯ МОДЕЛЬ</div><h2>Цифровая карта рудника</h2></div><span class="legend"><i class="green"></i>В норме <i class="yellow"></i>В пути <i class="red"></i>Нарушение</span></div>
+ <div class="map-wrap"><svg id="mine-map" viewBox="0 0 800 540" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Интерактивная карта карьера с дорогами, самосвалами, двумя рудными участками и дробилкой">
+ <defs><pattern id="grid" width="32" height="32" patternUnits="userSpaceOnUse"><path d="M32 0H0V32" stroke="#25394c" stroke-width=".7" fill="none" /></pattern><linearGradient id="rock" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#736554"/><stop offset="1" stop-color="#353a41"/></linearGradient><filter id="glow"><feGaussianBlur stdDeviation="5"/></filter></defs>
+ <rect width="800" height="540" fill="#0d1e2c"/><rect width="800" height="540" fill="url(#grid)" opacity=".5"/>
+ <path d="M36 95 Q150 20 272 125 T433 210 L375 460 90 495 42 330Z" fill="url(#rock)" stroke="#806951" stroke-width="3"/>
+ <path d="M70 126 Q151 69 244 142 L311 278 255 416 101 449 76 337Z" fill="#887459" stroke="#bf9770" stroke-width="2"/>
+ <path d="M91 159 Q165 112 211 168 L262 269 219 390 117 413 100 331Z" fill="#a98b63" stroke="#c8a079" stroke-width="2"/>
+ <path d="M108 184 Q166 156 192 197 L227 282 194 359 137 384 119 314Z" fill="#4b4440" stroke="#ddae6b" stroke-width="2"/>
+ <path d="M455 94 Q558 55 760 126 L765 479 610 519 454 455Z" fill="#132f3b" stroke="#214652" stroke-width="2"/>
+ <path id="road-a" d="M126 180 L402 275" class="road"/><path id="road-b" d="M126 385 L402 275" class="road"/>
+ <path id="road-main" d="M402 275 L685 210" class="road"/><path id="road-detour-1" d="M402 275 L588 442" class="road"/><path id="road-detour-2" d="M588 442 L685 210" class="road"/>
+ <g transform="translate(91,144)"><rect x="0" y="0" width="69" height="33" rx="6" fill="#d9a045" stroke="#ffe0a4"/><path d="M39 12L66 -18" fill="none" stroke="#e3b96e" stroke-width="8" stroke-linecap="round"/><rect x="5" y="27" width="60" height="10" rx="4" fill="#1d262c"/><circle cx="16" cy="32" r="3" fill="#788b94"/><circle cx="49" cy="32" r="3" fill="#788b94"/></g>
+ <g transform="translate(90,351)"><rect x="0" y="0" width="69" height="33" rx="6" fill="#d9a045" stroke="#ffe0a4"/><path d="M39 12L66 -18" fill="none" stroke="#e3b96e" stroke-width="8" stroke-linecap="round"/><rect x="5" y="27" width="60" height="10" rx="4" fill="#1d262c"/><circle cx="16" cy="32" r="3" fill="#788b94"/><circle cx="49" cy="32" r="3" fill="#788b94"/></g>
+ <g transform="translate(661,177)"><path d="M-20 0H35L50 30L17 53H-34Z" fill="#61787d" stroke="#b4d4c8" stroke-width="3"/><path d="M-5 0L20 53M12 0L37 36" stroke="#c2d5c3" stroke-width="2"/><rect x="-40" y="51" width="90" height="17" fill="#344651" stroke="#6f9f9f"/></g>
+ <g id="units"></g>
+ <g class="map-label" transform="translate(24,45)"><rect width="192" height="45" rx="7"/><text x="12" y="19">ORE FACE A · 0,45% Cu</text><text x="12" y="34" class="sub">EX-A • LOWER GRADE</text></g>
+ <g class="map-label" transform="translate(24,465)"><rect width="192" height="45" rx="7"/><text x="12" y="19">ORE FACE B · 1,10% Cu</text><text x="12" y="34" class="sub">EX-B • HIGHER GRADE</text></g>
+ <g class="map-label" transform="translate(565,56)"><rect width="207" height="47" rx="7"/><text x="12" y="20">PRIMARY CRUSHER CR-01</text><text x="12" y="36" class="sub">450 t/h NOMINAL</text></g>
+ <g transform="translate(402 275)"><circle r="8" fill="#3af0cb" stroke="#194c50" stroke-width="3"/><text x="-16" y="-17" fill="#a0d4d0" font-size="11">JUNCTION</text></g>
+ <g transform="translate(588 442)"><circle r="6" fill="#879d9d"/><text x="-43" y="27" fill="#a0c3c8" font-size="11">BYPASS</text></g>
+ </svg><div class="map-caption"><span>● Измерения: условная схема дорог</span><span id="map-status">Ожидаем показания цифровых двойников...</span></div></div>
+ </section>
+ <aside class="panel control"><div class="panel-heading"><div><div class="eyebrow">02 / SCENARIO LAB</div><h2>«Что, если?»</h2></div></div>
+ <div class="control-description">Измените производственные условия. Результаты поступают через MQTT в Eclipse Ditto и возвращаются на карту.</div>
+ <div class="scenario"><div class="scenario-info"><b>Перекрытие главной дороги</b><small>Новый маршрут, больше километров</small></div><label class="switch"><input id="road_closed" type="checkbox"/><span></span></label></div>
+ <div class="scenario"><div class="scenario-info"><b>Авария экскаватора EX-B</b><small>Остановка добычи высокосортной руды</small></div><label class="switch"><input id="excavator_failure" type="checkbox"/><span></span></label></div>
+ <div class="scenario"><div class="scenario-info"><b>Дробилка −50% мощности</b><small>Очередь самосвалов и падение выпуска</small></div><label class="switch"><input id="crusher_reduced" type="checkbox"/><span></span></label></div>
+ <div class="mode-buttons"><button id="btnAdaptive" class="active">Адаптивный режим</button><button id="btnBasic">Базовый режим</button></div>
+ <button class="reset" id="reset">↻ Сбросить симуляцию</button><div class="feedback" id="feedback">Решения подтверждаются данными цифровых двойников.</div>
+ <div class="equipment"><h3>Оборудование</h3><div id="fleet" class="fleet"></div></div>
+ </aside></div>
+ <section class="bottom-grid"><div class="panel comparison"><div class="eyebrow">03 / ПРОВЕРЯЕМЫЙ ЭКСПЕРИМЕНТ</div><h2>Две стратегии диспетчеризации</h2><p>Сопоставление одинаковых 4-часовых симуляций: фиксированное правило против алгоритма, учитывающего качество руды, очередь и расстояния.</p><div id="benchmark" class="table-placeholder">Расчёт показателей...</div><small class="note">Числа вычисляются симулятором. Это синтетические результаты, не экономический эффект на действующем карьере.</small></div>
+ <div class="panel source"><div class="eyebrow">04 / OPENEGIZ INTEGRATION</div><h2>Проверка происхождения данных</h2><div class="data-path"><span>Python Simulator</span><b>→ MQTT</b><span>Eclipse Ditto</span><b>→</b><span>Эта карта</span></div><p>Экран получает актуальные значения <code>GET /api/2/things/...</code>, а не рисует заранее подготовленную анимацию.</p><a href="http://localhost:3000" target="_blank" rel="noreferrer">Открыть Grafana ↗</a></div></section>
+</main><footer>QazMine Flow · OpenEgiz Competition 2026 · Synthetic engineering demonstrator</footer><script src="/app.js"></script></body></html>
